@@ -2,30 +2,37 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from recommender import Recommender
 
+# CREATE FLASK APP FIRST
 app = Flask(__name__)
 CORS(app)
 
-# Load recommenders
-movie_recommender = Recommender(
-    "dataset/movies.csv", "description"
-)
-product_recommender = Recommender(
-    "dataset/products.csv", "description"
-)
+# LOAD RECOMMENDERS
+movie_rec = Recommender("dataset/movies.csv")
+product_rec = Recommender("dataset/products.csv")
+video_rec = Recommender("dataset/videos.csv")
 
 
+# ROUTE COMES AFTER app IS DEFINED
 @app.route("/recommend", methods=["POST"])
 def recommend():
-    data = request.json
-    query = data.get("query", "").lower()
+    data = request.json or {}
 
-    # Simple domain detection
-    if any(word in query for word in ["movie", "film", "actor", "series"]):
-        results = movie_recommender.recommend(query)
-    else:
-        results = product_recommender.recommend(query)
+    query = data.get("query", "")
+    domain = data.get("domain")
 
-    return jsonify(results)
+    if not query or not domain:
+        return jsonify([])
+
+    if domain == "movie":
+        return jsonify(movie_rec.recommend(query))
+
+    if domain == "product":
+        return jsonify(product_rec.recommend(query))
+
+    if domain == "video":
+        return jsonify(video_rec.recommend(query))
+
+    return jsonify([])
 
 
 if __name__ == "__main__":
